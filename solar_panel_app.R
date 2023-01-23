@@ -1,21 +1,27 @@
-library(reticulate)
+# Install packages
+library(reticulate) # Python to R language wrapper
 library(shiny)
-library(shinythemes)
+library(shinythemes) # UI themes for shiny
 library(shinydashboard)
-library(DT)
+library(DT) # Data table functionality
 library(tidyverse)
 library(markdown)
 library(shinyalert) # Used to create the popups/alerts
 library(shinyBS) # Tooltip descriptions
 library(shinyjs) # 'Quit' page to prevent freezes on local machine
+library(leaflet) # Location and mapping
+library(zipcodeR) # Zipcode input functionality
+library(plotly) # Nice plots
+library(lubridate) # Dealing with time series data
 
 
-
+# Connect Python file for simulation functions
 source_python('solar_panel_functions.py')
 
 # Simple function to close window (not needed in shiny apps version) but useful when testing (sometimes shiny can glitch and force a restart)
 jscode <- "shinyjs.closeWindow = function() { window.close(); }"
 
+# Header text for the home page
 Header_Details <- list(h3("Welcome to my solar panel simulation application!", align="center", style="font-size:30px"),
                        br(),
                        br(),
@@ -23,16 +29,18 @@ Header_Details <- list(h3("Welcome to my solar panel simulation application!", a
                        br(),
                        br())
 
+# Footer text for all pages 
 Footer_Details <- list(hr(),
-                       p("Please contact me at", tags$a(href="danielsaul@me.com","danielsaul@me.com"), "for any questions.", align="center"), 
+                       p("Please contact me at", tags$a(href="mailto:danielsaul@me.com","danielsaul@me.com"), "for any questions.", align="center"), 
                        p("Copyright 2022", align="center"))
 
+# Instructional text on the home page
 Instruction_Details <- list(h3("How to use this simulation:", align="left", style="font-size:20px"),
                        br(),
-                       p("1. Start by entering in the latitude and longitude of the location you wanted to simulate, rounded to two decimals, in the 'Location Data' tab.", align="left", style="padding-left:40px; font-size:15px"),
-                       p("2. Move to the 'Simulation' tab and enter the greenhouse, system design, lifetime degradation, and financial inputs for the weather data you selected in step 1.", align="left", style="padding-left:40px; font-size:15px"),
+                       p("1. Start by entering in the latitude and longitude, or zipcode, of the location you wanted to simulate, rounded to two decimals, in the 'Location Data' tab.", align="left", style="padding-left:40px; font-size:15px"),
+                       p("2. Move to the 'Simulation' tab and enter the greenhouse, system design, and lifetime degradation inputs for the weather data you selected in step 1.", align="left", style="padding-left:40px; font-size:15px"),
                        p("3. Next, utilize the output tabs included in the 'Simulation' tab after running your model.", align="left", style="padding-left:40px; font-size:15px"),
-                       p("4. Navigate to the 'Data Dictionary' tab for further information on the model, inputs, and outputs. Or, go to the 'Quit' tab to end your session.", align="left", style="padding-left:40px; font-size:15px"),
+                       p("4. Navigate to the 'More Information' tab for further information on the model, inputs, and outputs. Or, go to the 'Quit' tab to end your session.", align="left", style="padding-left:40px; font-size:15px"),
                        h3("Notes:", align="left", style="font-size:20px"),
                        p("- User information entered in this estimator is not stored.", align="left", style="padding-left:40px; font-size:15px"),
                        p("- All information is discarded once you exit the simulator.", align="left", style="padding-left:40px; font-size:15px"),
@@ -40,49 +48,91 @@ Instruction_Details <- list(h3("How to use this simulation:", align="left", styl
 
 #navBar_title <- tags$a(tags$img(src='uga-logo.png', height = 35, width = 24), "Solar Panel Simulation")
 
+# Table of definitions and information in the more info page
 more_info <- read_csv("Data/Solar Data Dictionary - Sheet1 (1).csv")
                        
-
+# UI Section
 ui <- fluidPage (
-  theme = shinytheme("spacelab"),
+  theme = shinytheme("spacelab"), # set the ui theme
   navbarPage(title="Solar Panel Simulation",
              windowTitle = "Solar Panel Simulation",
              footer = isolate({Footer_Details}),
+             
+             # Instructions tab
              tabPanel("Instructions", icon = icon("house"), isolate({Header_Details}), isolate({Instruction_Details})),
+             
+             # Location data tab
              tabPanel("Location Data", icon = icon("table"),
                       sidebarLayout(
                         sidebarPanel(
                           titlePanel("Weather Data Location"),
-                          numericInput(inputId = "lat",
-                                    label = "Latitude:",
-                                    width = '200px',
-                                    value = '',
-                                    min=-90,
-                                    max=90),
-                          bsTooltip('lat', "Latitude of weather location. Please round to two decimals and provide a value between -90 and 90.",'right',options = list(container = 'body')),
                           
-                          numericInput(inputId = "lon",
-                                    label = "Longitude:",
-                                    width = '200px',
-                                    value = '',
-                                    min=-180,
-                                    max=180),
-                          bsTooltip('lon', "Longitude of weather location. Please round to two decimals and provide a value between -180 and 180.",'right',options = list(container = 'body')),
+                          selectInput(inputId = "location_type",
+                                      label = "Location Input Type:",
+                                      width = "200px",
+                                      choices = c("Latitude/Longitude", "Zipcode")),
                           
-                          helpText("Please wait a moment for the application to update, gather data, and output the table."),
+                          conditionalPanel(condition = "input.location_type == 'Latitude/Longitude'",
+                                           numericInput(inputId = "lat",
+                                                        label = "Latitude:",
+                                                        width = '200px',
+                                                        value = '',
+                                                        min=-90,
+                                                        max=90),
+                                           bsTooltip('lat', "Latitude of weather location. Please round to two decimals and provide a value between -90 and 90.",'right',options = list(container = 'body')),
+                                           
+                                           numericInput(inputId = "lon",
+                                                        label = "Longitude:",
+                                                        width = '200px',
+                                                        value = '',
+                                                        min=-180,
+                                                        max=180),
+                                           bsTooltip('lon', "Longitude of weather location. Please round to two decimals and provide a value between -180 and 180.",'right',options = list(container = 'body'))),
+                          
+                          conditionalPanel(condition = "input.location_type == 'Zipcode'",
+                                           numericInput(inputId = "zipcode",
+                                                        label = "Zipcode:",
+                                                        width = '200px',
+                                                        value = '',
+                                                        min=00000,
+                                                        max=99999),
+                                           bsTooltip('zipcode', "The 5-digit zipcode of the weather location. Please do not add any spaces or dashes.",'right',options = list(container = 'body')),
+                                           
+                                           HTML(paste0("<b>","Latitude:","</b>")),
+                                           textOutput('lat'),
+                                           
+                                           HTML(paste0("<b>","Longitude:","</b>")),
+                                           textOutput('lon')),
+                          
+                          
+                          
+                          helpText("Please wait a moment for the application to update, gather data, and output the table. If you change input values, please click the button again."),
                           actionButton(inputId = "WeatherDataButton", 
                                        label = "Submit",
                                        width = '100px',
                                        icon("arrows-rotate")),
+                          
+                          br(),
+                          
+                          br(),
+                          
+                          leafletOutput("weather_map")
                         ),
+
+                        
                         mainPanel(
-                          DT::dataTableOutput("weather_table")
+                          DT::dataTableOutput("weather_table"),
+                          br(),
+                          plotlyOutput(outputId = "irradiance_plot", height = 'auto', width = 'auto'))
                         )
                       )),
+
+             # Simulation tab
              tabPanel("Simulation", icon = icon("bolt"),
                       sidebarLayout(
                         sidebarPanel(
                           titlePanel("Panel & System Inputs"),
+                          helpText("Please fill in all inputs as they are required and may produce errors if empty or not entered correctly."),
                           h3("Greenhouse Panels"),
                           
                           numericInput(inputId = 'roof_length',
@@ -183,6 +233,11 @@ ui <- fluidPage (
                                        choiceNames = c('Standard: Polycrystalline','Premium: Monocrystalline','Thin film'), 
                                        choiceValues = c(0,1,2)),
                           
+                          HTML(paste0("<b>","Module Efficiency:","</b>")),
+                          br(),
+                          textOutput('mod_eff'),
+                          
+                          
                           h3("System Lifetime"),
                           
                           radioButtons(inputId = 'system_use_lifetime_output', 
@@ -190,33 +245,39 @@ ui <- fluidPage (
                                        choiceNames = c('No','Yes'), 
                                        choiceValues = c(0,1)),
                           
-                          numericInput(inputId = 'analysis_period',
-                                       label = 'Analysis Period (years):',
-                                       width = '200px',
-                                       value = '0',
-                                       min=0),
-                          bsTooltip('analysis_period', "The number of years you want to use as the analysis period for the simulation.",'right',options = list(container = 'body')),
+                          conditionalPanel(condition = "input.system_use_lifetime_output == 1",
+                                           numericInput(inputId = 'analysis_period',
+                                                        label = 'Analysis Period (years):',
+                                                        width = '200px',
+                                                        value = '0',
+                                                        min=0),
+                                           bsTooltip('analysis_period', "The number of years you want to use as the analysis period for the simulation.",'right',options = list(container = 'body')),
+                                           
+                                           textInput(inputId = 'dc_degradation',
+                                                     label = 'DC Degradation (%/year):',
+                                                     width = '200px',
+                                                     value = '0'),
+                                           bsTooltip('dc_degradation', "The percent per year annual DC degradation for lifetime simulations. Please enter your input either as sequence object, requiring this format `0.5, 0.6, 0.7` matching each analysis period year, for instance, that format would use 3 years.",'right',options = list(container = 'body'))),
                           
-                          textInput(inputId = 'dc_degradation',
-                                       label = 'DC Degradation (%/year):',
-                                       width = '200px',
-                                       value = '0'),
-                          bsTooltip('dc_degradation', "The percent per year annual DC degradation for lifetime simulations. Please enter your input either as sequence object, requiring this format `0.5, 0.6, 0.7` matching each analysis period year, for instance, that format would use 3 years.",'right',options = list(container = 'body')),
+                          helpText("Please wait a moment for the application to simulate and generate outputs. If you change input values, please click the button again."),
                           
-                          
-                          h3("Financials"),
                           actionButton(inputId = "SimulateButton", 
                                        label = "Simulate",
                                        width = '100px',
-                                       icon("arrows-rotate")),
+                                       icon("arrows-rotate"))
                           
                         ),
                         mainPanel(
                           tabsetPanel(
                             tabPanel("Annual Outputs", tableOutput("annual_outputs")),
-                            tabPanel("Hourly Outputs", DT::dataTableOutput("hourly_outputs")),
-                            tabPanel("Monthly Outputs", tableOutput("monthly_outputs")),
-                            tabPanel("Plots")
+                            tabPanel("Hourly Outputs", 
+                                     DT::dataTableOutput("hourly_outputs"),
+                                     br(),
+                                     plotlyOutput(outputId = "daily_plot", height = 'auto', width = 'auto')),
+                            tabPanel("Monthly Outputs", 
+                                     tableOutput("monthly_outputs"),
+                                     br(),
+                                     plotlyOutput(outputId = "monthly_plot", height = 'auto', width = 'auto'))
                           )
                         )
                       )),
@@ -225,25 +286,27 @@ ui <- fluidPage (
                                                  h3("Licenses"), 
                                                  h3("Creator"),
                                                  p("Daniel Saul"),
-                                                 p("Student Assistant - University of Georgia"),
-                                                 actionLink('github', label = 'GitHub', icon = icon("github"), onclick ="window.open(href='https://github.com/DanielPSaul');"),
+                                                 p(em("Student Assistant - University of Georgia")),
+                                                 actionLink('github', label = 'GitHub', icon = icon("github"), onclick ="window.open(href='https://github.com/DanielPSaul/SolarPanelApp');"),
                                                  br(),
                                                  actionLink('linkedin', label = 'LinkedIn', icon = icon("linkedin"), onclick ="window.open(href='https://www.linkedin.com/in/danielsaul1/');"),
                                                  br(),
-                                                 actionLink('Email', label = 'Email', icon = icon("envelope"), onclick ="location.href='mailto:danielsaul@me.com';"),
+                                                 actionLink('Email', label = 'Email', icon = icon("envelope"), onclick ="location.href='mailto:danielsaul@me.com';")
                                                  ),
                                     mainPanel(width = 8, 
                                               h3("Data Dictionary"),
                                               DT::dataTableOutput("more_info_table")),
                                     position = c("right"),
-                                    fluid = TRUE
+                                    fluid = TRUE)
                                     
-                                    )
+                                  )
+             
                       ),
              tabPanel(title = "Quit", icon = icon("circle-xmark"), actionButton("close", "Click Here to End Session"))
-             
   )
+
 )
+
 
 server <- function(input, output, session) {
   
@@ -262,13 +325,52 @@ server <- function(input, output, session) {
                                                              pageLength = 3),
                                               rownames = FALSE)
   
+  # # Render leaflet weather map in the Location tab
+  output$weather_map <- renderLeaflet({
+
+    leaflet() %>%
+      setView(-83.37, 33.94, 12) %>%
+      addTiles()
+    
+  })
   
   
   # Get weather data and table
   observeEvent(input$WeatherDataButton, {
-    shinyalert("Gathering Data...", showConfirmButton = FALSE, timer = 2000)
+    shinyalert("Gathering Data...", showConfirmButton = FALSE, timer = 0)
+
+    # Convert Zipcode input to latitude and longitude
+    if (input$location_type == "Zipcode") {
+      
+      codes <- geocode_zip(input$zipcode)
+      lat1 <- codes[[2]]
+      lon1 <- codes[[3]]
+      
+      lat = lat1
+      lon = lon1
+      
+      output$lat <- renderText({
+        paste(lat, "degrees")
+      })
+      
+      output$lon <- renderText({
+        paste(lon, "degrees")
+      })
+      
+    } else {
+      
+      lat = input$lat
+      lon = input$lon
+      
+    }
+
+    leafletProxy('weather_map') %>%
+      clearMarkers() %>%
+      setView(lon, lat, 12) %>%
+      addMarkers(lon, lat)
     
-    data_outputs <- getWeatherData(isolate(input$lat), isolate(input$lon))
+    
+    data_outputs <- getWeatherData(isolate(lat), isolate(lon))
     data <- data_outputs[[1]]
     
     weather_data <- data %>%
@@ -280,14 +382,40 @@ server <- function(input, output, session) {
                                                                pageLength = 5),
                                                 rownames = FALSE)
     
-    shinyalert("Gathering Complete.", showConfirmButton = TRUE, type = "success")
+    output$irradiance_plot <- renderPlotly({
+      
+      new_df <- data %>%
+        group_by(Month = month(Month)) %>%
+        summarise(DHI = mean(DHI), DNI = mean(DNI), GHI = mean(GHI))
+      
+      new_df$Months <-c('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+      
+      p3 <- ggplot(data = new_df, aes(x = factor(Months, level=c('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')))) +
+        geom_line(aes(y = DHI, group=1, colour = "DHI")) +
+        geom_point(aes(y = DHI, colour = "DHI")) +
+        
+        geom_line(aes(y = DNI, group=1, colour = "DNI")) +
+        geom_point(aes(y = DNI, colour = "DNI")) +
+        
+        geom_line(aes(y = GHI, group=1, colour = "GHI")) +
+        geom_point(aes(y = GHI, colour = "GHI")) +
+        
+        labs(title = "Monthly Average Irradiance", x = "", y = "Watts per Square Meter", color='Irradiance Type') +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+      
+      p3 <- ggplotly(p3)
+      
+    })
+
+    shinyalert("Gathering Complete.", showConfirmButton = TRUE, type = "success", immediate = TRUE)
     
   })
   
+  # Simulation tab running when button is clicked
   observeEvent(input$SimulateButton, {
-    shinyalert("Running Simulation...", showConfirmButton = FALSE, timer = 2000)
+    shinyalert("Running Simulation...", showConfirmButton = FALSE, timer = 0)
     
-    data_outputs <- getWeatherData(isolate(input$lat), isolate(input$lon))
+    data_outputs <- getWeatherData(isolate(lat), isolate(lon))
     df <- data_outputs[[1]]
     info <- data_outputs[[2]]
     
@@ -331,6 +459,10 @@ server <- function(input, output, session) {
       module_efficiency = 0.18
     }
     
+    output$mod_eff <- renderText({
+      paste(module_efficiency)
+    })
+    
     system_capacity <- panelcov_area * 1 * module_efficiency
     
     output$system_capacity_out <- renderText({
@@ -348,7 +480,42 @@ server <- function(input, output, session) {
     output$hourly_outputs <- DT::renderDataTable(hourly_output)
     output$monthly_outputs <- renderTable(monthly_output)
     
-    shinyalert("Simulation Complete.", showConfirmButton = TRUE, type = "success")
+    # Monthly output line plot
+    output$monthly_plot <- renderPlotly({
+      
+      p <- ggplot(data = monthly_output, aes(x = factor(Month, level=c('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')))) +
+        geom_line(aes(y = `DC Output (kWh)`, group=1, colour = "DC Output")) +
+        geom_point(aes(y = `DC Output (kWh)`, colour = "DC Output")) +
+        
+        geom_line(aes(y = `Energy Gen (kWh)`, group=1, colour = "Energy Gen")) +
+        geom_point(aes(y = `Energy Gen (kWh)`, colour = "Energy Gen")) +
+        
+        labs(title = "Monthly Average Energy Output", x = "", y = "Kilowatt-hours", color='Energy Type') +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+      
+      p <- ggplotly(p)
+      
+    })
+    
+    # Hourly/Daily output line plot
+    output$daily_plot <- renderPlotly({
+      
+      hourly_output$Time=row.names(hourly_output)
+      
+      hour_plot_df <- hourly_output %>%
+        group_by(Day = yday(Time)) %>%
+        summarise(`System Power Gen (kW)` = mean(`System Power Gen (kW)`))
+      
+      p2 <- ggplot(data = hour_plot_df, aes(x = Day, y = `System Power Gen (kW)`)) +
+        geom_line(aes(group=1)) +
+        geom_point() +
+        labs(title = "Daily Average Energy Output", x = "Day of Year", y = "Kilowatts")
+      
+      p2 <- ggplotly(p2)
+      
+    })
+    
+    shinyalert("Simulation Complete.", showConfirmButton = TRUE, type = "success", immediate = TRUE)
   })
 }
 

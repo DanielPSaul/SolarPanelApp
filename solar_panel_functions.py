@@ -4,9 +4,11 @@ import pandas as pd
 import numpy as np
 import requests
 
+# Establish API key and email as credentials
 api_key = '9UUX1nAVhZoj90XY9R1QHD4U5foWHVABoQxlbnxt'
 email = 'danielsaul@uga.edu'
 
+# Define function to retrieve weather data from location via API
 def getWeatherData(lat, lon):
   url = 'https://developer.nrel.gov/api/nsrdb/v2/solar/psm3-tmy-download.csv?names=tmy-2020&wkt=POINT({lon}%20{lat})&interval=60&api_key={api_key}&email={email}&utc=false'.format(api_key=api_key, email=email, lon=lon, lat=lat)
   df = pd.read_csv(url, skiprows=2)
@@ -15,10 +17,11 @@ def getWeatherData(lat, lon):
   df.index.rename('Timestamp', inplace=True)
   return df, info
 
+# Define function to run simulation based on inputs and data, producing output tables and metrics
 def runSimulation(df, info, tilt, azimuth, inv_eff, losses, array_type, gcr, module_type, dc_ac_ratio, system_capacity, system_use_lifetime_output, analysis_period, dc_degradation):
-  use_wf_albedo = 1
-  constant = 0
-  dc_degradation = tuple(map(float, dc_degradation.split(', ')))
+  use_wf_albedo = 1 # Use weather file's albedo values
+  constant = 0 # Initialize a constant variable for sim use
+  dc_degradation = tuple(map(float, dc_degradation.split(', '))) # Format DC degradation value
   
   # Solar model with a new model
   solar_model = PVWatts.new("PVWattsNone")

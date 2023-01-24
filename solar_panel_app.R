@@ -51,84 +51,97 @@ Instruction_Details <- list(h3("How to use this simulation:", align="left", styl
 # Table of definitions and information in the more info page
 more_info <- read_csv("Data/Solar Data Dictionary - Sheet1 (1).csv")
                        
-# UI Section
+
+################################################################################
+#                             USER INTERFACE (UI)
+################################################################################
 ui <- fluidPage (
-  theme = shinytheme("spacelab"), # set the ui theme
-  navbarPage(title="Solar Panel Simulation",
-             windowTitle = "Solar Panel Simulation",
+  
+  theme = shinytheme("spacelab"),
+  navbarPage(title="Solar Panel Simulation", 
+             windowTitle = "Solar Panel Simulation", 
              footer = isolate({Footer_Details}),
              
-             # Instructions tab
-             tabPanel("Instructions", icon = icon("house"), isolate({Header_Details}), isolate({Instruction_Details})),
+             tabPanel("Instructions", 
+                      icon = icon("house"), 
+                      isolate({Header_Details}), 
+                      isolate({Instruction_Details})),
              
-             # Location data tab
-             tabPanel("Location Data", icon = icon("table"),
+             tabPanel("Location Data", 
+                      icon = icon("table"), 
                       sidebarLayout(
-                        sidebarPanel(
-                          titlePanel("Weather Data Location"),
-                          
-                          selectInput(inputId = "location_type",
-                                      label = "Location Input Type:",
-                                      width = "200px",
-                                      choices = c("Latitude/Longitude", "Zipcode")),
-                          
-                          conditionalPanel(condition = "input.location_type == 'Latitude/Longitude'",
-                                           numericInput(inputId = "lat",
-                                                        label = "Latitude:",
-                                                        width = '200px',
-                                                        value = '',
-                                                        min=-90,
-                                                        max=90),
-                                           bsTooltip('lat', "Latitude of weather location. Please round to two decimals and provide a value between -90 and 90.",'right',options = list(container = 'body')),
-                                           
-                                           numericInput(inputId = "lon",
-                                                        label = "Longitude:",
-                                                        width = '200px',
-                                                        value = '',
-                                                        min=-180,
-                                                        max=180),
-                                           bsTooltip('lon', "Longitude of weather location. Please round to two decimals and provide a value between -180 and 180.",'right',options = list(container = 'body'))),
-                          
-                          conditionalPanel(condition = "input.location_type == 'Zipcode'",
-                                           numericInput(inputId = "zipcode",
-                                                        label = "Zipcode:",
-                                                        width = '200px',
-                                                        value = '',
-                                                        min=00000,
-                                                        max=99999),
-                                           bsTooltip('zipcode', "The 5-digit zipcode of the weather location. Please do not add any spaces or dashes.",'right',options = list(container = 'body')),
-                                           
-                                           HTML(paste0("<b>","Latitude:","</b>")),
-                                           textOutput('lat'),
-                                           
-                                           HTML(paste0("<b>","Longitude:","</b>")),
-                                           textOutput('lon')),
-                          
-                          
-                          
-                          helpText("Please wait a moment for the application to update, gather data, and output the table. If you change input values, please click the button again."),
-                          actionButton(inputId = "WeatherDataButton", 
-                                       label = "Submit",
-                                       width = '100px',
-                                       icon("arrows-rotate")),
-                          
-                          br(),
-                          
-                          br(),
-                          
-                          leafletOutput("weather_map")
-                        ),
-
+                        sidebarPanel(titlePanel("Weather Data Location"),
+                                     
+                                     selectInput(inputId = "location_type", 
+                                                 label = "Location Input Type:", 
+                                                 width = "200px", 
+                                                 choices = c("Latitude/Longitude", "Zipcode")),
+                                     
+                                     conditionalPanel(condition = "input.location_type == 'Latitude/Longitude'",
+                                                      numericInput(inputId = "lat", 
+                                                                   label = "Latitude:", 
+                                                                   width = '200px', 
+                                                                   value = '', 
+                                                                   min=-90, 
+                                                                   max=90),
+                                                      bsTooltip('lat', 
+                                                                "Latitude of weather location. Please round to two decimals and provide a value between -90 and 90.",
+                                                                'right',
+                                                                options = list(container = 'body')),
+                                                      
+                                                      numericInput(inputId = "lon", 
+                                                                   label = "Longitude:", 
+                                                                   width = '200px', 
+                                                                   value = '', 
+                                                                   min=-180, 
+                                                                   max=180),
+                                                      bsTooltip('lon', 
+                                                                "Longitude of weather location. Please round to two decimals and provide a value between -180 and 180.",
+                                                                'right',
+                                                                options = list(container = 'body'))),
+                                     
+                                     conditionalPanel(condition = "input.location_type == 'Zipcode'",
+                                                      
+                                                      numericInput(inputId = "zipcode",
+                                                                   label = "Zipcode:", 
+                                                                   width = '200px',
+                                                                   value = '',
+                                                                   min=00000,
+                                                                   max=99999),
+                                                      bsTooltip('zipcode', 
+                                                                "The 5-digit zipcode of the weather location. Please do not add any spaces or dashes.",
+                                                                'right',
+                                                                options = list(container = 'body')),
+                                                      
+                                                      HTML(paste0("<b>","Latitude:","</b>")),
+                                                      textOutput('lat'),
+                                                      
+                                                      HTML(paste0("<b>","Longitude:","</b>")),
+                                                      textOutput('lon')),
+                                     
+                                     helpText("Please wait a moment for the application to update, gather data, and output the table. If you change input values, please click the button again."),
+                                     
+                                     actionButton(inputId = "WeatherDataButton",
+                                                  label = "Submit",
+                                                  width = '100px',
+                                                  icon("arrows-rotate")),
+                                     
+                                     br(),
+                                     br(),
+                                     
+                                     leafletOutput("weather_map")
+                                     
+                                     ),
                         
-                        mainPanel(
-                          DT::dataTableOutput("weather_table"),
-                          br(),
-                          plotlyOutput(outputId = "irradiance_plot", height = 'auto', width = 'auto'))
+                        mainPanel(DT::dataTableOutput("weather_table"),
+                                  br(),
+                                  plotlyOutput(outputId = "irradiance_plot", height = 'auto', width = 'auto'))
                         )
-                      )),
+             ),
 
              # Simulation tab
-             tabPanel("Simulation", icon = icon("bolt"),
+             tabPanel("Simulation", 
+                      icon = icon("bolt"),
                       sidebarLayout(
                         sidebarPanel(
                           titlePanel("Panel & System Inputs"),
@@ -140,19 +153,24 @@ ui <- fluidPage (
                                        width = '200px',
                                        value = '',
                                        min=0),
-                          bsTooltip('roof_length', "The length of the greenhouse roof.",'right',options = list(container = 'body')),
+                          bsTooltip('roof_length', 
+                                    "The length of the greenhouse roof.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           numericInput(inputId = 'roof_width',
                                        label = 'Roof Width (meters):',
                                        width = '200px',
                                        value = '',
                                        min=0),
-                          bsTooltip('roof_width', "The width of the greenhouse roof.",'right',options = list(container = 'body')),
+                          bsTooltip('roof_width', 
+                                    "The width of the greenhouse roof.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           HTML(paste0("<b>","Roof Area:","</b>")),
                           br(),
                           textOutput('roof_area_out'),
-                          
                           br(),
                           
                           numericInput(inputId = 'panel_coverage',
@@ -160,12 +178,14 @@ ui <- fluidPage (
                                        width = '200px',
                                        value = '',
                                        min=0),
-                          bsTooltip('panel_coverage', "The percentage of the greenhouse roof the panels cover.",'right',options = list(container = 'body')),
+                          bsTooltip('panel_coverage', 
+                                    "The percentage of the greenhouse roof the panels cover.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           HTML(paste0("<b>","Panel Coverage Area:","</b>")),
                           br(),
                           textOutput('panelcov_area_out'),
-                          
                           br(),
                           
                           numericInput(inputId = 'tilt',
@@ -174,7 +194,10 @@ ui <- fluidPage (
                                        value = '',
                                        min=0,
                                        max=90),
-                          bsTooltip('tilt', "Degree tilt of the solar panels.",'right',options = list(container = 'body')),
+                          bsTooltip('tilt', 
+                                    "Degree tilt of the solar panels.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           numericInput(inputId = 'azimuth',
                                        label = 'Azimuth (degrees):',
@@ -182,14 +205,16 @@ ui <- fluidPage (
                                        value = '',
                                        min=0,
                                        max=360),
-                          bsTooltip('azimuth', "Azimuth is the angle that the solar panels are facing and is measured in a clockwise direction from north.",'right',options = list(container = 'body')),
+                          bsTooltip('azimuth', 
+                                    "Azimuth is the angle that the solar panels are facing and is measured in a clockwise direction from north.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           h3("System Design"),
                           
                           HTML(paste0("<b>","System Capacity:","</b>")),
                           br(),
                           textOutput('system_capacity_out'),
-                          
                           br(),
                           
                           numericInput(inputId = 'inv_eff',
@@ -198,7 +223,10 @@ ui <- fluidPage (
                                        value = '',
                                        min=90,
                                        max=99.5),
-                          bsTooltip('inv_eff', "The ratio of the usable AC output power to the sum of the DC input power and any AC input power. Typically, between 95 to 98%.",'right',options = list(container = 'body')),
+                          bsTooltip('inv_eff', 
+                                    "The ratio of the usable AC output power to the sum of the DC input power and any AC input power. Typically, between 95 to 98%.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           numericInput(inputId = 'losses',
                                        label = 'Losses (%):',
@@ -206,7 +234,10 @@ ui <- fluidPage (
                                        value = '',
                                        min=-5,
                                        max=99),
-                          bsTooltip('losses', "Total system losses (do NOT include a percent sign %).",'right',options = list(container = 'body')),
+                          bsTooltip('losses', 
+                                    "Total system losses (do NOT include a percent sign %).",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           numericInput(inputId = 'gcr',
                                        label = 'Ground Coverage Ratio:',
@@ -214,14 +245,20 @@ ui <- fluidPage (
                                        value = '',
                                        min=0.01,
                                        max=0.99),
-                          bsTooltip('gcr', "The ratio of module surface area to the area of the ground or roof occupied by the array. Typical values range from 0.3 to 0.6.",'right',options = list(container = 'body')),
+                          bsTooltip('gcr', 
+                                    "The ratio of module surface area to the area of the ground or roof occupied by the array. Typical values range from 0.3 to 0.6.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           numericInput(inputId = 'dc_ac_ratio',
                                        label = 'DC to AC Ratio:',
                                        width = '200px',
                                        value = '',
                                        min=0),
-                          bsTooltip('dc_ac_ratio', "The ratio of installed DC capacity to the inverters AC power rating.",'right',options = list(container = 'body')),
+                          bsTooltip('dc_ac_ratio', 
+                                    "The ratio of installed DC capacity to the inverters AC power rating.",
+                                    'right',
+                                    options = list(container = 'body')),
                           
                           radioButtons(inputId = 'array_type', 
                                        label = 'Array Type:', 
@@ -251,13 +288,19 @@ ui <- fluidPage (
                                                         width = '200px',
                                                         value = '0',
                                                         min=0),
-                                           bsTooltip('analysis_period', "The number of years you want to use as the analysis period for the simulation.",'right',options = list(container = 'body')),
+                                           bsTooltip('analysis_period', 
+                                                     "The number of years you want to use as the analysis period for the simulation.",
+                                                     'right',
+                                                     options = list(container = 'body')),
                                            
                                            textInput(inputId = 'dc_degradation',
                                                      label = 'DC Degradation (%/year):',
                                                      width = '200px',
                                                      value = '0'),
-                                           bsTooltip('dc_degradation', "The percent per year annual DC degradation for lifetime simulations. Please enter your input either as sequence object, requiring this format `0.5, 0.6, 0.7` matching each analysis period year, for instance, that format would use 3 years.",'right',options = list(container = 'body'))),
+                                           bsTooltip('dc_degradation', 
+                                                     "The percent per year annual DC degradation for lifetime simulations. Please enter your input either as sequence object, requiring this format `0.5, 0.6, 0.7` matching each analysis period year, for instance, that format would use 3 years.",
+                                                     'right',
+                                                     options = list(container = 'body'))),
                           
                           helpText("Please wait a moment for the application to simulate and generate outputs. If you change input values, please click the button again."),
                           
@@ -269,11 +312,15 @@ ui <- fluidPage (
                         ),
                         mainPanel(
                           tabsetPanel(
-                            tabPanel("Annual Outputs", tableOutput("annual_outputs")),
+              
+                            tabPanel("Annual Outputs", 
+                                     tableOutput("annual_outputs")),
+                            
                             tabPanel("Hourly Outputs", 
                                      DT::dataTableOutput("hourly_outputs"),
                                      br(),
                                      plotlyOutput(outputId = "daily_plot", height = 'auto', width = 'auto')),
+                            
                             tabPanel("Monthly Outputs", 
                                      tableOutput("monthly_outputs"),
                                      br(),
@@ -282,31 +329,37 @@ ui <- fluidPage (
                         )
                       )),
              tabPanel("More Information", icon = icon("book"),
-                      sidebarLayout(sidebarPanel(h3("Sources"), 
-                                                 h3("Licenses"), 
-                                                 h3("Creator"),
-                                                 p("Daniel Saul"),
-                                                 p(em("Student Assistant - University of Georgia")),
-                                                 actionLink('github', label = 'GitHub', icon = icon("github"), onclick ="window.open(href='https://github.com/DanielPSaul/SolarPanelApp');"),
-                                                 br(),
-                                                 actionLink('linkedin', label = 'LinkedIn', icon = icon("linkedin"), onclick ="window.open(href='https://www.linkedin.com/in/danielsaul1/');"),
-                                                 br(),
-                                                 actionLink('Email', label = 'Email', icon = icon("envelope"), onclick ="location.href='mailto:danielsaul@me.com';")
-                                                 ),
+                      sidebarLayout(
+                        sidebarPanel(h3("Sources"),
+                                     
+                                     h3("Licenses"),
+                                     
+                                     h3("Creator"),
+                                     p("Daniel Saul"),
+                                     p(em("Student Assistant - University of Georgia")),
+                                     actionLink('github', label = 'GitHub', icon = icon("github"), onclick ="window.open(href='https://github.com/DanielPSaul/SolarPanelApp');"),
+                                     br(),
+                                     actionLink('linkedin', label = 'LinkedIn', icon = icon("linkedin"), onclick ="window.open(href='https://www.linkedin.com/in/danielsaul1/');"),
+                                     br(),
+                                     actionLink('Email', label = 'Email', icon = icon("envelope"), onclick ="location.href='mailto:danielsaul@me.com';")),
+                        
                                     mainPanel(width = 8, 
                                               h3("Data Dictionary"),
                                               DT::dataTableOutput("more_info_table")),
-                                    position = c("right"),
-                                    fluid = TRUE)
-                                    
-                                  )
+                        position = c("right"),
+                        fluid = TRUE)),
              
-                      ),
-             tabPanel(title = "Quit", icon = icon("circle-xmark"), actionButton("close", "Click Here to End Session"))
-  )
+             tabPanel(title = "Quit", 
+                      icon = icon("circle-xmark"), 
+                      actionButton("close", "Click Here to End Session"))
 
+  )
 )
 
+
+################################################################################
+#                                   SERVER
+################################################################################
 
 server <- function(input, output, session) {
   

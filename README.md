@@ -1,8 +1,8 @@
 # SolarPanelApp
 
-### Solar Panel Simulation
-
 [![](https://img.shields.io/badge/ShinyApps.io-Open_Web_App-3686d3?logo=r)](https://daniel-saul.shinyapps.io/Solar-Panel-Simulation/)
+
+### Solar Panel Simulation
 
 **Concepts:** Interactive Web App Development, API's, Data Transformation, Data Analytics, Data Visualization
 
